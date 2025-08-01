@@ -82,7 +82,7 @@ func (item *Item) ttl() time.Duration {
 	const defaultTTL = time.Hour
 
 	if item.TTL < 0 {
-		return 0
+		return redis.KeepTTL
 	}
 
 	if item.TTL != 0 {
