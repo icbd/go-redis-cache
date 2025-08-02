@@ -337,26 +337,29 @@ var _ = Describe("Cache", func() {
 				Expect(callCount).To(Equal(int64(2)))
 			})
 
-			It("skips Set when TTL = -1", func() {
-				key := "skip-set"
+			It("Set when TTL = -1", func() {
+				key := "set-with-keepttl"
 
 				var value string
+				var callCount int64
 				err := mycache.Once(&cache.Item{
 					Ctx:   ctx,
 					Key:   key,
 					Value: &value,
 					Do: func(item *cache.Item) (interface{}, error) {
+						atomic.AddInt64(&callCount, 1)
 						item.TTL = -1
 						return "hello", nil
 					},
 				})
 				Expect(err).NotTo(HaveOccurred())
 				Expect(value).To(Equal("hello"))
+				Expect(callCount).To(Equal(int64(1)))
 
 				if rdb != nil {
-					exists, err := rdb.Exists(ctx, key).Result()
+					ttl, err := rdb.TTL(ctx, key).Result()
 					Expect(err).NotTo(HaveOccurred())
-					Expect(exists).To(Equal(int64(0)))
+					Expect(ttl).To(Equal(time.Duration(redis.KeepTTL)))
 				}
 			})
 		})
